@@ -17,6 +17,21 @@ class Action(Enum):
     def __str__(self):
         return self.value
 
+class Browser(Enum):
+    EDGE = "edge"
+    CHROME = "chrome"
+
+    def __str__(self):
+        return self.value
+
+def get_driver(browser: Browser) -> WebDriver:
+    if browser == Browser.EDGE:
+        return webdriver.Edge()
+    elif browser == Browser.CHROME:
+        return webdriver.Chrome()
+    else:
+        raise ValueError("Invalid browser type")
+
 
 def get_song_details(song: WebElement) -> dict:
     heading = song.find_element(By.CLASS_NAME, "details") \
@@ -67,12 +82,25 @@ if __name__ == "__main__":
         help="The action to perform"
     )
     args.add_argument(
+        "--browser", "-b",
+        type=Browser,
+        choices=list(Browser),
+        default=Browser.EDGE,
+        help="The browser to use for scraping"
+    )
+    args.add_argument(
         "--output", "-o",
         type=str,
         default="output",
         help="The output file")
     args = args.parse_args()
 
-    driver = webdriver.Chrome()
+    try:
+        driver = get_driver(args.browser)
+    except ValueError as e:
+        print(f"An error occurred: {e}")
+        exit(1)
+
     main(driver=driver, action=args.action, output_file=args.output)
     driver.close()
+    exit(0)
