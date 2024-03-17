@@ -9,6 +9,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver import ActionChains
+from selenium.webdriver import ChromeOptions
+from selenium.webdriver import EdgeOptions
 
 URL = "https://happy-new-year.javidkhasizada.xyz/"
 
@@ -27,11 +29,23 @@ class Browser(Enum):
     def __str__(self):
         return self.value
 
-def get_driver(browser: Browser) -> WebDriver:
+def get_driver(browser: Browser, headless: bool = True) -> WebDriver:
+
     if browser == Browser.EDGE:
-        driver = webdriver.Edge()
+        # TODO refactor further
+        if (headless):
+            options = EdgeOptions()
+            options.add_argument("--headless=new")
+            driver = webdriver.Edge(options=options)
+        else:
+            driver = webdriver.Edge()
     elif browser == Browser.CHROME:
-        driver = webdriver.Chrome()
+        if (headless):
+            options = ChromeOptions()
+            options.add_argument("--headless=new")
+            driver = webdriver.Chrome(options=options)
+        else:
+            driver = webdriver.Chrome()
     else:
         raise ValueError("Invalid browser type")
     
@@ -115,8 +129,12 @@ def main(driver: WebDriver, action: Enum, output_file: str) -> None:
         
 
 
-    with open(f"{output_file}.json", "w") as f:
+    with open(f"{output_file}.json", "w", encoding="utf-8") as f:
         json.dump(output, f, indent=4)
+
+
+def str_to_bool(s: str) -> bool:
+    return s.lower() in ['true', '1', 't', 'y', 'yes', 'yeah', 'yup', 'certainly', 'uh-huh']
 
 
 if __name__ == "__main__":
@@ -141,10 +159,16 @@ if __name__ == "__main__":
         type=str,
         default="output",
         help="The output file")
+    args.add_argument(
+        "--debug", "-d",
+        type=str_to_bool,
+        default=False,
+        help="The output file")
     args = args.parse_args()
 
+
     try:
-        driver = get_driver(args.browser)
+        driver = get_driver(args.browser, headless=not args.debug)
     except ValueError as e:
         print(f"An error occurred: {e}")
         exit(1)
